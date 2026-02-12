@@ -1,0 +1,9 @@
+{
+  "allure": {
+    "directory": "allure-results",
+    "removePreviousResults": true,
+    "links": [
+      "https://github.com/ITTVaidantGarg/Reqres-Api-GithubAction"
+    ]
+  }
+}

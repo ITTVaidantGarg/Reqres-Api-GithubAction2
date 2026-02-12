@@ -1,0 +1,99 @@
+name: Manual API Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: 'Which test suite to run'
+        required: true
+        default: 'SmokeSuite'
+        type: choice
+        options:
+          - SmokeSuite
+          - RegressionSuite
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  checks: write
+  pull-requests: write
+
+jobs:
+  manual-tests:
+    name: Run ${{ github.event.inputs.suite }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ReqresApiAutomation
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --no-restore
+
+      - name: Run selected suite
+        run: dotnet test --no-build --verbosity normal --filter "TestCategory=${{ github.event.inputs.suite }}" --logger "trx;LogFileName=test-results.trx"
+        continue-on-error: true
+
+      - name: List allure-results (Debug)
+        if: always()
+        run: |
+          echo "=== Checking for allure-results ==="
+          find . -name "allure-results" -type d -exec ls -la {} \;
+          echo "=== Contents of bin/Debug/net8.0 ==="
+          ls -la bin/Debug/net8.0/ || echo "Directory not found"
+
+      - name: Publish Test Results
+        if: always()
+        uses: dorny/test-reporter@v1
+        with:
+          name: Manual Test Results (${{ github.event.inputs.suite }})
+          path: ReqresApiAutomation/TestResults/**/*.trx
+          reporter: dotnet-trx
+          fail-on-error: false
+
+      - name: Generate Allure report
+        if: always()
+        uses: simple-elf/allure-report-action@master
+        with:
+          allure_results: ReqresApiAutomation/bin/Debug/net8.0/allure-results
+          allure_report: allure-report-manual
+          allure_history: allure-history
+          keep_reports: 20
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report-manual-${{ github.event.inputs.suite }}
+          path: allure-report-manual
+          retention-days: 7
+
+      - name: Deploy landing page to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: .github/resources
+          destination_dir: .
+          keep_files: true
+
+      - name: Deploy report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report-manual
+          destination_dir: manual
+          keep_files: true
