@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reqres API Test Reports</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 60px 40px;
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1.1rem;
+            margin-bottom: 50px;
+        }
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+        .report-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 40px 30px;
+            text-decoration: none;
+            color: white;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+        .report-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .report-card.automated {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        }
+        .report-card.manual {
+            background: linear-gradient(135deg, #ee0979 0%, #ff6a00 100%);
+        }
+        .report-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .report-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        .report-description {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            line-height: 1.5;
+        }
+        .footer {
+            color: #999;
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+        .badge {
+            display: inline-block;
+            background: #f0f0f0;
+            color: #666;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin: 5px;
+        }
+        .info-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-top: 30px;
+            text-align: left;
+        }
+        .info-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        .info-section ul {
+            list-style-position: inside;
+            color: #666;
+            line-height: 2;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>?? Reqres API Test Reports</h1>
+        <p class="subtitle">Automated Testing Dashboard for API Validation</p>
+        
+        <div class="reports-grid">
+            <a href="./automated/index.html" class="report-card automated">
+                <div class="report-icon">??</div>
+                <div class="report-title">Automated Tests</div>
+                <div class="report-description">
+                    Full test suite results from CI/CD pipeline
+                    <br><br>
+                    <span class="badge">SmokeSuite</span>
+                    <span class="badge">RegressionSuite</span>
+                </div>
+            </a>
+            
+            <a href="./manual/index.html" class="report-card manual">
+                <div class="report-icon">??</div>
+                <div class="report-title">Manual Tests</div>
+                <div class="report-description">
+                    On-demand test execution results
+                    <br><br>
+                    <span class="badge">Custom Suite</span>
+                </div>
+            </a>
+        </div>
+
+        <div class="info-section">
+            <h3>?? About These Reports</h3>
+            <ul>
+                <li><strong>Automated Tests:</strong> Run on every push, pull request, and daily at midnight UTC</li>
+                <li><strong>Manual Tests:</strong> Triggered manually via GitHub Actions workflow dispatch</li>
+                <li><strong>History:</strong> Last 20 test runs are preserved with trend analysis</li>
+                <li><strong>Framework:</strong> .NET 8 + NUnit + Allure Reporting</li>
+            </ul>
+        </div>
+
+        <div class="footer">
+            <p>Generated by GitHub Actions | Powered by Allure Framework</p>
+            <p style="margin-top: 10px;">
+                <a href="https://github.com/ITTVaidantGarg/Reqres-Api-GithubAction" 
+                   style="color: #667eea; text-decoration: none;">
+                    View Source on GitHub ?
+                </a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
