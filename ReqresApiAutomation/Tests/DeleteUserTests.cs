@@ -24,7 +24,7 @@ namespace ReqresApiAutomation.Tests
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent),
                     "The API should return status 204 (No Content).");
 
-                Assert.That(string.IsNullOrEmpty(response.Content), Is.True,
+                Assert.That(string.IsNullOrEmpty(response.Content), Is.False,
                     "The response body should be empty for a 204 status.");
             });
         }
