@@ -125,7 +125,7 @@ jobs:
          cd ..
          zip -r allure-report.zip allure-report-manual
   
-      - name: Send Email Notification
+      - name: Send Allure Index Only
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
@@ -134,20 +134,16 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Manual API Test (${{ github.event.inputs.suite }}) - Run #${{ github.run_number }}"
+          subject: "Allure Report - ${{ github.run_number }}"
           body: |
-            Manual API Test Execution Completed.
-
-            Suite: ${{ github.event.inputs.suite }}
-            Passed: ${{ env.PASSED }}
-            Failed: ${{ env.FAILED }}
-
-            The HTML report is attached with this email.
-
+            Allure report HTML file is attached.
+      
+            Note: This file may not render correctly without its supporting assets.
+      
             Regards,
             CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
-          attachments: allure-report.zip
+          attachments: ../allure-report-manual/index.html
 
 
