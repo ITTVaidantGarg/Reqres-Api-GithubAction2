@@ -117,7 +117,12 @@ jobs:
           publish_dir: ./allure-report-manual
           destination_dir: manual
           keep_files: true
-          
+    
+      - name: Zip Allure Report
+        if: always()
+        run: |
+             zip -r allure-report.zip allure-report-manual
+  
       - name: Send Email Notification
         if: always()
         uses: dawidd6/action-send-mail@v3
@@ -141,5 +146,6 @@ jobs:
             CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
-          attachments: .github/resources/index.html
+          attachments: allure-report.zip
+
 
