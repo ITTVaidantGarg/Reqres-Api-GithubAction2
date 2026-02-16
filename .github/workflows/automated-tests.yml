@@ -48,6 +48,10 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore
+        
+      - name: Clean Allure Results
+        run: |
+          rm -rf ReqresApiAutomation/bin/Debug/net8.0/allure-results
 
       ############################################################
       # 2️⃣ RUN TESTS
