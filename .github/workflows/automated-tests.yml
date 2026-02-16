@@ -12,7 +12,7 @@ on:
       - 'ReqresApiAutomation/**'
 
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 0 * * *'   # Daily midnight UTC
 
 permissions:
   contents: write
@@ -25,11 +25,16 @@ jobs:
   automated-tests:
     name: Run Full Test Suite
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: ReqresApiAutomation
 
     steps:
+      ############################################################
+      # 1️⃣ SETUP
+      ############################################################
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -44,6 +49,10 @@ jobs:
       - name: Build
         run: dotnet build --no-restore
 
+      ############################################################
+      # 2️⃣ RUN TESTS
+      ############################################################
+
       - name: Run Smoke test suite
         run: dotnet test --no-build --verbosity normal --filter "TestCategory=SmokeSuite" --logger "trx;LogFileName=smoke-results.trx"
         continue-on-error: true
@@ -52,60 +61,49 @@ jobs:
         run: dotnet test --no-build --verbosity normal --filter "TestCategory=RegressionSuite" --logger "trx;LogFileName=regression-results.trx"
         continue-on-error: true
 
-      - name: List allure-results (Debug)
-        if: always()
-        run: |
-          echo "=== Checking for allure-results ==="
-          find . -name "allure-results" -type d -exec ls -la {} \;
-          echo "=== Contents of bin/Debug/net8.0 ==="
-          ls -la bin/Debug/net8.0/ || echo "Directory not found"
+      ############################################################
+      # 3️⃣ EXTRACT SUMMARY
+      ############################################################
 
-      - name: Publish Test Results
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Full Suite Test Results
-          path: ReqresApiAutomation/TestResults/**/*.trx
-          reporter: dotnet-trx
-          fail-on-error: false
-          
       - name: Extract Test Summary
         if: always()
         run: |
-          echo "Finding TRX files..."
           FILES=$(find . -name "*.trx")
-          echo "$FILES"
-
           PASSED=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
           FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
-
           PASSED=${PASSED:-0}
           FAILED=${FAILED:-0}
-
           echo "PASSED=$PASSED" >> $GITHUB_ENV
           echo "FAILED=$FAILED" >> $GITHUB_ENV
 
-          echo "Passed: $PASSED"
-          echo "Failed: $FAILED"
-          
-      - name: Generate Allure report
+      ############################################################
+      # 4️⃣ MULTI-FILE ALLURE (GitHub Pages + History)
+      ############################################################
+
+      - name: Generate Allure report (Multi-file)
         if: always()
         uses: simple-elf/allure-report-action@master
         with:
           allure_results: ReqresApiAutomation/bin/Debug/net8.0/allure-results
-          allure_report: allure-report
+          allure_report: allure-report-automated
           allure_history: allure-history
+          gh_pages: gh-pages
           keep_reports: 20
 
-      - name: Upload Allure report
+      - name: Upload Allure report (Artifact)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: allure-report-automated
-          path: allure-report
+          name: allure-report-automated-${{ github.run_number }}
+          path: allure-report-automated
           retention-days: 7
 
-      - name: Deploy landing page to GitHub Pages
+      ############################################################
+      # 5️⃣ DEPLOY TO GITHUB PAGES
+      ############################################################
+
+      # Landing page (root)
+      - name: Deploy landing page
         if: always()
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -114,15 +112,61 @@ jobs:
           destination_dir: .
           keep_files: true
 
-      - name: Deploy report to GitHub Pages
+      # Latest automated report
+      - name: Deploy latest automated report
         if: always()
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
+          publish_dir: ./allure-report-automated
           destination_dir: automated
           keep_files: true
-          
+
+      # Archive per run
+      - name: Deploy automated archive
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./allure-report-automated
+          destination_dir: automated/run-${{ github.run_number }}
+          keep_files: true
+
+      ############################################################
+      # 6️⃣ SINGLE-FILE ALLURE (For Email)
+      ############################################################
+
+      - name: Install Allure CLI
+        if: always()
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre
+          ALLURE_VERSION=2.36.0
+          wget https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz
+          tar -zxvf allure-${ALLURE_VERSION}.tgz
+          sudo mv allure-${ALLURE_VERSION} /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+          allure --version
+
+      - name: Generate Single File Allure Report
+        if: always()
+        run: |
+          cd ..
+          allure generate ReqresApiAutomation/bin/Debug/net8.0/allure-results \
+            --clean \
+            --single-file \
+            -o single-allure-report
+
+      - name: Prepare Single HTML For Email
+        if: always()
+        run: |
+          cd ..
+          cp single-allure-report/index.html single-allure-automated.html
+
+      ############################################################
+      # 7️⃣ EMAIL REPORT
+      ############################################################
+
       - name: Send Email Notification
         if: always()
         uses: dawidd6/action-send-mail@v3
@@ -140,16 +184,13 @@ jobs:
             Branch: ${{ github.ref_name }}
 
             Test Summary:
-            ✅ Passed: ${{ env.PASSED }}
-            ❌ Failed: ${{ env.FAILED }}
+            Passed: ${{ env.PASSED }}
+            Failed: ${{ env.FAILED }}
 
-            View GitHub Run:
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            View Allure Report:
-            https://ittvaidantgarg.github.io/Reqres-Api-GithubAction/automated/
+            📎 Single-file Allure Report is attached.
 
             Regards,
             CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
+          attachments: single-allure-automated.html
