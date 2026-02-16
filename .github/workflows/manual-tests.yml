@@ -119,10 +119,12 @@ jobs:
           destination_dir: manual
           keep_files: true
     
-      - name: Prepare Allure HTML for Email
+      - name: Copy Allure index to root
         if: always()
         run: |
-          cp ../allure-report-manual/index.html allure-index.html
+          cd ..
+          cp allure-report-manual/index.html allure-index.html
+
   
       - name: Send Allure Index Only
         if: always()
