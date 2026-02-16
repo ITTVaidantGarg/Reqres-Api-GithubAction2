@@ -94,7 +94,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./allure-report-manual
-          destination_dir: manual
+          destination_dir: manual/run-${{ github.run_number }}
+
           keep_files: true
 
       #################################################################
