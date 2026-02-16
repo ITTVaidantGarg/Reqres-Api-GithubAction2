@@ -131,22 +131,15 @@ jobs:
           body: |
             Manual API Test Execution Completed.
 
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-            Triggered Suite: ${{ github.event.inputs.suite }}
+            Suite: ${{ github.event.inputs.suite }}
+            Passed: ${{ env.PASSED }}
+            Failed: ${{ env.FAILED }}
 
-            Test Summary:
-            ✅ Passed: ${{ env.PASSED }}
-            ❌ Failed: ${{ env.FAILED }}
-
-            View GitHub Run:
-            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-
-            View Allure Report:
-            https://ittvaidantgarg.github.io/Reqres-Api-GithubAction/manual/
+            The HTML report is attached with this email.
 
             Regards,
             CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
+          attachments: .github/resources/index.html
 
