@@ -106,10 +106,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y default-jre
-          wget https://github.com/allure-framework/allure2/releases/latest/download/allure-2.27.0.tgz
-          tar -zxvf allure-2.27.0.tgz
-          sudo mv allure-2.27.0 /opt/allure
+      
+          ALLURE_VERSION=2.36.0
+          wget https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.tgz
+          tar -zxvf allure-${ALLURE_VERSION}.tgz
+          sudo mv allure-${ALLURE_VERSION} /opt/allure
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+
+        allure --version
 
       - name: Generate Single File Allure Report
         if: always()
@@ -146,9 +150,6 @@ jobs:
             Suite: ${{ github.event.inputs.suite }}
             Passed: ${{ env.PASSED }}
             Failed: ${{ env.FAILED }}
-
-            🌐 Web Report:
-            https://ittvaidantgarg.github.io/Reqres-Api-GithubAction/manual/
 
             📎 Single-file Allure Report is attached.
 
