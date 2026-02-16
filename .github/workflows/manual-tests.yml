@@ -112,8 +112,7 @@ jobs:
           tar -zxvf allure-${ALLURE_VERSION}.tgz
           sudo mv allure-${ALLURE_VERSION} /opt/allure
           sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-
-        allure --version
+          allure --version
 
       - name: Generate Single File Allure Report
         if: always()
