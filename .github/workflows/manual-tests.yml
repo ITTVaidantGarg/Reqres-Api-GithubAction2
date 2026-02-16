@@ -41,6 +41,10 @@ jobs:
 
       - name: Build
         run: dotnet build --no-restore
+        
+      - name: Clean Allure Results
+        run: |
+          rm -rf ReqresApiAutomation/bin/Debug/net8.0/allure-results
 
       - name: Run selected suite
         run: dotnet test --no-build --verbosity normal --filter "TestCategory=${{ github.event.inputs.suite }}" --logger "trx;LogFileName=test-results.trx"
