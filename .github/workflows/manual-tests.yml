@@ -46,44 +46,22 @@ jobs:
         run: dotnet test --no-build --verbosity normal --filter "TestCategory=${{ github.event.inputs.suite }}" --logger "trx;LogFileName=test-results.trx"
         continue-on-error: true
 
-      - name: List allure-results (Debug)
-        if: always()
-        run: |
-          echo "=== Checking for allure-results ==="
-          find . -name "allure-results" -type d -exec ls -la {} \;
-          echo "=== Contents of bin/Debug/net8.0 ==="
-          ls -la bin/Debug/net8.0/ || echo "Directory not found"
-
-      - name: Publish Test Results
-        if: always()
-        uses: dorny/test-reporter@v1
-        with:
-          name: Manual Test Results (${{ github.event.inputs.suite }})
-          path: ReqresApiAutomation/TestResults/**/*.trx
-          reporter: dotnet-trx
-          fail-on-error: false
-          
       - name: Extract Test Summary
         if: always()
         run: |
-          echo "Finding TRX files..."
           FILES=$(find . -name "*.trx")
-          echo "$FILES"
-
           PASSED=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
           FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
-
           PASSED=${PASSED:-0}
           FAILED=${FAILED:-0}
-
           echo "PASSED=$PASSED" >> $GITHUB_ENV
           echo "FAILED=$FAILED" >> $GITHUB_ENV
 
-          echo "Passed: $PASSED"
-          echo "Failed: $FAILED"
+      #################################################################
+      # 1️⃣ MULTI-FILE ALLURE (FOR GITHUB PAGES + HISTORY)
+      #################################################################
 
- 
-      - name: Generate Allure report
+      - name: Generate Allure report (Multi-file)
         if: always()
         uses: simple-elf/allure-report-action@master
         with:
@@ -93,7 +71,7 @@ jobs:
           gh_pages: gh-pages
           keep_reports: 20
 
-      - name: Upload Allure report
+      - name: Upload Allure report (Artifact)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -118,15 +96,41 @@ jobs:
           publish_dir: ./allure-report-manual
           destination_dir: manual
           keep_files: true
-    
-      - name: Copy Allure index to root
+
+      #################################################################
+      # 2️⃣ SINGLE-FILE ALLURE (FOR EMAIL ATTACHMENT)
+      #################################################################
+
+      - name: Install Allure CLI
+        if: always()
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-jre
+          wget https://github.com/allure-framework/allure2/releases/latest/download/allure-2.27.0.tgz
+          tar -zxvf allure-2.27.0.tgz
+          sudo mv allure-2.27.0 /opt/allure
+          sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+
+      - name: Generate Single File Allure Report
         if: always()
         run: |
           cd ..
-          cp allure-report-manual/index.html allure-index.html
+          allure generate ReqresApiAutomation/bin/Debug/net8.0/allure-results \
+            --clean \
+            --single-file \
+            -o single-allure-report
 
-  
-      - name: Send Allure Index Only
+      - name: Prepare Single HTML For Email
+        if: always()
+        run: |
+          cd ..
+          cp single-allure-report/index.html single-allure.html
+
+      #################################################################
+      # 3️⃣ EMAIL SINGLE FILE
+      #################################################################
+
+      - name: Send Email Notification
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
@@ -135,16 +139,21 @@ jobs:
           secure: true
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "Allure Report - ${{ github.run_number }}"
+          subject: "Manual API Test (${{ github.event.inputs.suite }}) - Run #${{ github.run_number }}"
           body: |
-            Allure report HTML file is attached.
-      
-            Note: This file may not render correctly without its supporting assets.
-      
+            Manual API Test Execution Completed.
+
+            Suite: ${{ github.event.inputs.suite }}
+            Passed: ${{ env.PASSED }}
+            Failed: ${{ env.FAILED }}
+
+            🌐 Web Report:
+            https://ittvaidantgarg.github.io/Reqres-Api-GithubAction/manual/
+
+            📎 Single-file Allure Report is attached.
+
             Regards,
             CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
-          attachments: allure-index.html
-
-
+          attachments: single-allure.html
