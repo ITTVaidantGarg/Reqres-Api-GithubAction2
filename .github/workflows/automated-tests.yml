@@ -68,7 +68,26 @@ jobs:
           path: ReqresApiAutomation/TestResults/**/*.trx
           reporter: dotnet-trx
           fail-on-error: false
-            
+          
+      - name: Extract Test Summary
+        if: always()
+        run: |
+          echo "Finding TRX files..."
+          find . -name "*.trx"
+
+          PASSED=$(grep -h -oP 'total="\K\d+' TestResults/**/*.trx | awk '{s+=$1} END {print s}')
+          FAILED=$(grep -h -oP 'failed="\K\d+' TestResults/**/*.trx | awk '{s+=$1} END {print s}')
+
+          PASSED=${PASSED:-0}
+          FAILED=${FAILED:-0}
+
+          echo "PASSED=$PASSED" >> $GITHUB_ENV
+          echo "FAILED=$FAILED" >> $GITHUB_ENV
+
+          echo "Passed: $PASSED"
+          echo "Failed: $FAILED"
+
+          
       - name: Generate Allure report
         if: always()
         uses: simple-elf/allure-report-action@master
@@ -103,3 +122,34 @@ jobs:
           publish_dir: ./allure-report
           destination_dir: automated
           keep_files: true
+          
+      - name: Send Email Notification
+        if: always()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 465
+          secure: true
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "Automated API Test Results - Run #${{ github.run_number }}"
+          body: |
+            Automated API Test Execution Completed.
+
+            Repository: ${{ github.repository }}
+            Branch: ${{ github.ref_name }}
+
+            Test Summary:
+            ✅ Passed: ${{ env.PASSED }}
+            ❌ Failed: ${{ env.FAILED }}
+
+            View GitHub Run:
+            https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+
+            View Allure Report:
+            https://ittvaidantgarg.github.io/Reqres-Api-GithubAction/automated/
+
+            Regards,
+            CI Automation
+          to: ${{ secrets.EMAIL_TO }}
+          from: API Automation CI
