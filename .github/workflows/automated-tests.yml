@@ -73,10 +73,11 @@ jobs:
         if: always()
         run: |
           echo "Finding TRX files..."
-          find . -name "*.trx"
+          FILES=$(find . -name "*.trx")
+          echo "$FILES"
 
-          PASSED=$(grep -h -oP 'total="\K\d+' TestResults/**/*.trx | awk '{s+=$1} END {print s}')
-          FAILED=$(grep -h -oP 'failed="\K\d+' TestResults/**/*.trx | awk '{s+=$1} END {print s}')
+          PASSED=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+          FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
 
           PASSED=${PASSED:-0}
           FAILED=${FAILED:-0}
@@ -86,7 +87,6 @@ jobs:
 
           echo "Passed: $PASSED"
           echo "Failed: $FAILED"
-
           
       - name: Generate Allure report
         if: always()
