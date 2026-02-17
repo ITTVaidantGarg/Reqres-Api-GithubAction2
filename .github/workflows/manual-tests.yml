@@ -160,8 +160,7 @@ jobs:
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "Manual API Test (${{ github.event.inputs.suite }}) - Run #${{ github.run_number }}"
-          content_type: text/html
-          body: |
+          html_body: |
             <h2>Manual API Test Execution Completed</h2>
       
             <p><strong>Suite:</strong> ${{ github.event.inputs.suite }}</p>
