@@ -193,7 +193,7 @@ jobs:
           subject: "Automated API Test Results - Run #${{ github.run_number }}"
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
-          attachments: single-allure-automated.html
+
           html_body: |
             <html>
             <body style="font-family: Arial, sans-serif; background-color:#f4f6f9; padding:20px;">
@@ -242,3 +242,4 @@ jobs:
               </div>
             </body>
             </html>
+          attachments: single-allure-automated.html
