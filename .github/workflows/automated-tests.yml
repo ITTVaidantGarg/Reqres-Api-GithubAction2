@@ -73,12 +73,22 @@ jobs:
         if: always()
         run: |
           FILES=$(find . -name "*.trx")
-          PASSED=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+      
+          TOTAL=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+          PASSED=$(grep -h -oP 'passed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
           FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+      
+          TOTAL=${TOTAL:-0}
           PASSED=${PASSED:-0}
           FAILED=${FAILED:-0}
+      
+          echo "TOTAL=$TOTAL" >> $GITHUB_ENV
           echo "PASSED=$PASSED" >> $GITHUB_ENV
           echo "FAILED=$FAILED" >> $GITHUB_ENV
+      
+          echo "Total: $TOTAL"
+          echo "Passed: $PASSED"
+          echo "Failed: $FAILED"
 
       ############################################################
       # 4️⃣ MULTI-FILE ALLURE (GitHub Pages + History)
