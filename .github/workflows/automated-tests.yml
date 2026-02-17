@@ -88,13 +88,13 @@ jobs:
       
           echo "---- Building HTML Rows ----"
       
-          i=1
+          grep -oP '<UnitTestResult[^>]*testName="\K[^"]+' "$FILE" > testnames.txt
+          grep -oP '<UnitTestResult[^>]*outcome="\K[^"]+' "$FILE" > outcomes.txt
+      
           echo "TEST_ROWS<<EOF" >> $GITHUB_ENV
       
-          grep -oP 'testName="\K[^"]+' "$FILE" > testnames.txt
-          grep -oP 'outcome="\K[^"]+' "$FILE" > outcomes.txt
-      
-          paste testnames.txt outcomes.txt | while read name status
+          i=1
+          while IFS=$'\t' read -r name status
           do
             if [ "$status" = "Passed" ]; then
               COLOR="green"
@@ -109,7 +109,7 @@ jobs:
                   </tr>" >> $GITHUB_ENV
       
             i=$((i+1))
-          done
+          done < <(paste testnames.txt outcomes.txt)
       
           echo "EOF" >> $GITHUB_ENV
 
