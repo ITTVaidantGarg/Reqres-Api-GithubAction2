@@ -72,8 +72,10 @@ jobs:
           i=1
           echo "TEST_ROWS<<EOF" >> $GITHUB_ENV
       
-          grep -oP 'testName="\K[^"]+' "$FILE" > testnames.txt
-          grep -oP 'outcome="\K[^"]+' "$FILE" > outcomes.txt
+          grep -oP '<UnitTestResult[^>]*testName="\K[^"]+' "$FILE" > testnames.txt
+          grep -oP '<UnitTestResult[^>]*outcome="\K[^"]+' "$FILE" > outcomes.txt
+          paste testnames.txt outcomes.txt > combined.txt
+
       
           paste testnames.txt outcomes.txt | while read name status
           do
