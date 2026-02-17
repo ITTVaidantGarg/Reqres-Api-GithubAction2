@@ -50,14 +50,14 @@ jobs:
         run: dotnet test --no-build --verbosity normal --filter "TestCategory=${{ github.event.inputs.suite }}" --logger "trx;LogFileName=test-results.trx"
         continue-on-error: true
 
-      - name: Extract Test Summary
+      - name: Extract Test Summary + Build HTML Rows
         if: always()
         run: |
-          FILES=$(find . -name "*.trx")
+          FILE=$(find . -name "*.trx" | head -n 1)
       
-          TOTAL=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
-          PASSED=$(grep -h -oP 'passed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
-          FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+          TOTAL=$(grep -oP 'total="\K\d+' "$FILE")
+          PASSED=$(grep -oP 'passed="\K\d+' "$FILE")
+          FAILED=$(grep -oP 'failed="\K\d+' "$FILE")
       
           TOTAL=${TOTAL:-0}
           PASSED=${PASSED:-0}
@@ -67,9 +67,33 @@ jobs:
           echo "PASSED=$PASSED" >> $GITHUB_ENV
           echo "FAILED=$FAILED" >> $GITHUB_ENV
       
-          echo "Total: $TOTAL"
-          echo "Passed: $PASSED"
-          echo "Failed: $FAILED"
+          echo "---- Building HTML Rows ----"
+      
+          i=1
+          echo "TEST_ROWS<<EOF" >> $GITHUB_ENV
+      
+          grep -oP 'testName="\K[^"]+' "$FILE" > testnames.txt
+          grep -oP 'outcome="\K[^"]+' "$FILE" > outcomes.txt
+      
+          paste testnames.txt outcomes.txt | while read name status
+          do
+            if [ "$status" = "Passed" ]; then
+              COLOR="green"
+            else
+              COLOR="red"
+            fi
+      
+            echo "<tr>
+                    <td>$i</td>
+                    <td>$name</td>
+                    <td style='color:$COLOR; font-weight:bold;'>$status</td>
+                  </tr>" >> $GITHUB_ENV
+      
+            i=$((i+1))
+          done
+      
+          echo "EOF" >> $GITHUB_ENV
+
 
       - name: Upload TRX Files
         if: always()
@@ -168,30 +192,44 @@ jobs:
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "Manual API Test (${{ github.event.inputs.suite }}) - Run #${{ github.run_number }}"
           html_body: |
-            <h2>Manual API Test Execution Completed</h2>
-      
-            <p><strong>Suite:</strong> ${{ github.event.inputs.suite }}</p>
-      
-            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
-              <tr>
-                <th>Total Tests</th>
-                <th>Passed</th>
-                <th>Failed</th>
-              </tr>
-              <tr>
-                <td>${{ env.TOTAL }}</td>
-                <td style="color: green; font-weight: bold;">${{ env.PASSED }}</td>
-                <td style="color: red; font-weight: bold;">${{ env.FAILED }}</td>
-              </tr>
-            </table>
-      
-            <br/>
-            <p><strong>Repository:</strong> ${{ github.repository }}</p>
-            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
-      
-            <br/>
-            Regards,<br/>
-            CI Automation
+            <div style="font-family: Arial, sans-serif; padding:20px; background:#f4f6f9;">
+              <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+          
+                <h2 style="margin-top:0;">Manual API Test Report</h2>
+                <p><strong>Suite:</strong> ${{ github.event.inputs.suite }}</p>
+                <p><strong>Run #:</strong> ${{ github.run_number }}</p>
+                <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+          
+                <br/>
+          
+                <table border="1" cellpadding="8" cellspacing="0" width="100%" 
+                       style="border-collapse: collapse; font-size:14px;">
+          
+                  <tr style="background:#2f3b52; color:white;">
+                    <th>#</th>
+                    <th>Test Name</th>
+                    <th>Status</th>
+                  </tr>
+          
+                  ${{ env.TEST_ROWS }}
+          
+                  <tr style="background:#f2f2f2; font-weight:bold;">
+                    <td colspan="2">TOTAL</td>
+                    <td>
+                      <span style="color:green;">Passed: ${{ env.PASSED }}</span>
+                      &nbsp; | &nbsp;
+                      <span style="color:red;">Failed: ${{ env.FAILED }}</span>
+                    </td>
+                  </tr>
+          
+                </table>
+          
+                <br/>
+                Regards,<br/>
+                CI Automation
+          
+              </div>
+            </div>
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
           attachments: single-allure.html
