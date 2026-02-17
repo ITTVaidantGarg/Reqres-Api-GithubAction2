@@ -69,14 +69,14 @@ jobs:
       # 3️⃣ EXTRACT SUMMARY
       ############################################################
 
-      - name: Extract Test Summary
+      - name: Extract Test Summary + Build HTML Rows
         if: always()
         run: |
-          FILES=$(find . -name "*.trx")
+          FILE=$(find . -name "*.trx" | head -n 1)
       
-          TOTAL=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
-          PASSED=$(grep -h -oP 'passed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
-          FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+          TOTAL=$(grep -oP 'total="\K\d+' "$FILE")
+          PASSED=$(grep -oP 'passed="\K\d+' "$FILE")
+          FAILED=$(grep -oP 'failed="\K\d+' "$FILE")
       
           TOTAL=${TOTAL:-0}
           PASSED=${PASSED:-0}
@@ -86,9 +86,34 @@ jobs:
           echo "PASSED=$PASSED" >> $GITHUB_ENV
           echo "FAILED=$FAILED" >> $GITHUB_ENV
       
-          echo "Total: $TOTAL"
-          echo "Passed: $PASSED"
-          echo "Failed: $FAILED"
+          echo "---- Building HTML Rows ----"
+      
+          i=1
+          echo "TEST_ROWS<<EOF" >> $GITHUB_ENV
+      
+          grep -oP 'testName="\K[^"]+' "$FILE" > testnames.txt
+          grep -oP 'outcome="\K[^"]+' "$FILE" > outcomes.txt
+      
+          paste testnames.txt outcomes.txt | while read name status
+          do
+            if [ "$status" = "Passed" ]; then
+              COLOR="green"
+            else
+              COLOR="red"
+            fi
+      
+            echo "<tr>
+                    <td>$i</td>
+                    <td>$name</td>
+                    <td style='color:$COLOR; font-weight:bold;'>$status</td>
+                  </tr>" >> $GITHUB_ENV
+      
+            i=$((i+1))
+          done
+      
+          echo "EOF" >> $GITHUB_ENV
+
+
 
       - name: Upload TRX Files
         if: always()
@@ -203,51 +228,42 @@ jobs:
           from: API Automation CI
 
           html_body: |
-            <html>
-            <body style="font-family: Arial, sans-serif; background-color:#f4f6f9; padding:20px;">
-              
-              <div style="background:#ffffff; padding:25px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
-                
-                <h2 style="color:#2c3e50;">🤖 Automated API Test Report</h2>
-      
-                <p><strong>Repository:</strong> ${{ github.repository }}</p>
+            <div style="font-family: Arial, sans-serif; padding:20px; background:#f4f6f9;">
+              <div style="background:white; padding:20px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+          
+                <h2 style="margin-top:0;">Manual API Test Report</h2>
+                <p><strong>Suite:</strong> ${{ github.event.inputs.suite }}</p>
+                <p><strong>Run #:</strong> ${{ github.run_number }}</p>
                 <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
-                <p><strong>Run Number:</strong> ${{ github.run_number }}</p>
-      
-                <h3 style="margin-top:25px;">Executive Summary</h3>
-      
-                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
-                  <thead>
-                    <tr style="background-color:#2c3e50; color:white;">
-                      <th style="padding:10px; border:1px solid #ddd;">Total Tests</th>
-                      <th style="padding:10px; border:1px solid #ddd;">Passed</th>
-                      <th style="padding:10px; border:1px solid #ddd;">Failed</th>
-                      <th style="padding:10px; border:1px solid #ddd;">Pass %</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr style="text-align:center;">
-                      <td style="padding:10px; border:1px solid #ddd;">
-                        ${{ env.TOTAL }}
-                      </td>
-                      <td style="padding:10px; border:1px solid #ddd; color:green; font-weight:bold;">
-                        ${{ env.PASSED }}
-                      </td>
-                      <td style="padding:10px; border:1px solid #ddd; color:red; font-weight:bold;">
-                        ${{ env.FAILED }}
-                      </td>
-                    </tr>
-                  </tbody>
+          
+                <br/>
+          
+                <table border="1" cellpadding="8" cellspacing="0" width="100%" 
+                       style="border-collapse: collapse; font-size:14px;">
+          
+                  <tr style="background:#2f3b52; color:white;">
+                    <th>#</th>
+                    <th>Test Name</th>
+                    <th>Status</th>
+                  </tr>
+          
+                  ${{ env.TEST_ROWS }}
+          
+                  <tr style="background:#f2f2f2; font-weight:bold;">
+                    <td colspan="2">TOTAL</td>
+                    <td>
+                      <span style="color:green;">Passed: ${{ env.PASSED }}</span>
+                      &nbsp; | &nbsp;
+                      <span style="color:red;">Failed: ${{ env.FAILED }}</span>
+                    </td>
+                  </tr>
+          
                 </table>
-      
-                <br>   
-      
-                <p style="margin-top:30px; color:#7f8c8d;">
-                  Regards,<br>
-                  CI Automation
-                </p>
-      
+          
+                <br/>
+                Regards,<br/>
+                CI Automation
+          
               </div>
-            </body>
-            </html>
+            </div>
           attachments: single-allure-automated.html
