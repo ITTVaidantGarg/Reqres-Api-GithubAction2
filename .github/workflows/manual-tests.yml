@@ -71,6 +71,13 @@ jobs:
           echo "Passed: $PASSED"
           echo "Failed: $FAILED"
 
+      - name: Upload TRX Files
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: manual-trx-${{ github.run_number }}
+          path: ReqresApiAutomation/TestResults/**/*.trx
+          retention-days: 7
 
       #################################################################
       # 1️⃣ MULTI-FILE ALLURE (FOR GITHUB PAGES + HISTORY)
