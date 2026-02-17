@@ -54,12 +54,23 @@ jobs:
         if: always()
         run: |
           FILES=$(find . -name "*.trx")
-          PASSED=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+      
+          TOTAL=$(grep -h -oP 'total="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+          PASSED=$(grep -h -oP 'passed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
           FAILED=$(grep -h -oP 'failed="\K\d+' $FILES | awk '{s+=$1} END {print s}')
+      
+          TOTAL=${TOTAL:-0}
           PASSED=${PASSED:-0}
           FAILED=${FAILED:-0}
+      
+          echo "TOTAL=$TOTAL" >> $GITHUB_ENV
           echo "PASSED=$PASSED" >> $GITHUB_ENV
           echo "FAILED=$FAILED" >> $GITHUB_ENV
+      
+          echo "Total: $TOTAL"
+          echo "Passed: $PASSED"
+          echo "Failed: $FAILED"
+
 
       #################################################################
       # 1️⃣ MULTI-FILE ALLURE (FOR GITHUB PAGES + HISTORY)
@@ -138,6 +149,7 @@ jobs:
       # 3️⃣ EMAIL SINGLE FILE
       #################################################################
 
+
       - name: Send Email Notification
         if: always()
         uses: dawidd6/action-send-mail@v3
@@ -148,16 +160,31 @@ jobs:
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "Manual API Test (${{ github.event.inputs.suite }}) - Run #${{ github.run_number }}"
+          content_type: text/html
           body: |
-            Manual API Test Execution Completed.
-
-            Suite: ${{ github.event.inputs.suite }}
-            Passed: ${{ env.PASSED }}
-            Failed: ${{ env.FAILED }}
-
-            📎 Single-file Allure Report is attached.
-
-            Regards,
+            <h2>Manual API Test Execution Completed</h2>
+      
+            <p><strong>Suite:</strong> ${{ github.event.inputs.suite }}</p>
+      
+            <table border="1" cellpadding="8" cellspacing="0" style="border-collapse: collapse;">
+              <tr>
+                <th>Total Tests</th>
+                <th>Passed</th>
+                <th>Failed</th>
+              </tr>
+              <tr>
+                <td>${{ env.TOTAL }}</td>
+                <td style="color: green; font-weight: bold;">${{ env.PASSED }}</td>
+                <td style="color: red; font-weight: bold;">${{ env.FAILED }}</td>
+              </tr>
+            </table>
+      
+            <br/>
+            <p><strong>Repository:</strong> ${{ github.repository }}</p>
+            <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+      
+            <br/>
+            Regards,<br/>
             CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
