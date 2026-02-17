@@ -171,7 +171,7 @@ jobs:
       # 7️⃣ EMAIL REPORT
       ############################################################
 
-      - name: Send Email Notification
+      - name: Send Automated Email Notification
         if: always()
         uses: dawidd6/action-send-mail@v3
         with:
@@ -181,20 +181,54 @@ jobs:
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
           subject: "Automated API Test Results - Run #${{ github.run_number }}"
-          body: |
-            Automated API Test Execution Completed.
-
-            Repository: ${{ github.repository }}
-            Branch: ${{ github.ref_name }}
-
-            Test Summary:
-            Passed: ${{ env.PASSED }}
-            Failed: ${{ env.FAILED }}
-
-            📎 Single-file Allure Report is attached.
-
-            Regards,
-            CI Automation
           to: ${{ secrets.EMAIL_TO }}
           from: API Automation CI
           attachments: single-allure-automated.html
+          html_body: |
+            <html>
+            <body style="font-family: Arial, sans-serif; background-color:#f4f6f9; padding:20px;">
+              
+              <div style="background:#ffffff; padding:25px; border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1);">
+                
+                <h2 style="color:#2c3e50;">🤖 Automated API Test Report</h2>
+      
+                <p><strong>Repository:</strong> ${{ github.repository }}</p>
+                <p><strong>Branch:</strong> ${{ github.ref_name }}</p>
+                <p><strong>Run Number:</strong> ${{ github.run_number }}</p>
+      
+                <h3 style="margin-top:25px;">Executive Summary</h3>
+      
+                <table style="width:100%; border-collapse:collapse; margin-top:10px;">
+                  <thead>
+                    <tr style="background-color:#2c3e50; color:white;">
+                      <th style="padding:10px; border:1px solid #ddd;">Total Tests</th>
+                      <th style="padding:10px; border:1px solid #ddd;">Passed</th>
+                      <th style="padding:10px; border:1px solid #ddd;">Failed</th>
+                      <th style="padding:10px; border:1px solid #ddd;">Pass %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr style="text-align:center;">
+                      <td style="padding:10px; border:1px solid #ddd;">
+                        ${{ env.TOTAL }}
+                      </td>
+                      <td style="padding:10px; border:1px solid #ddd; color:green; font-weight:bold;">
+                        ${{ env.PASSED }}
+                      </td>
+                      <td style="padding:10px; border:1px solid #ddd; color:red; font-weight:bold;">
+                        ${{ env.FAILED }}
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+      
+                <br>   
+      
+                <p style="margin-top:30px; color:#7f8c8d;">
+                  Regards,<br>
+                  CI Automation
+                </p>
+      
+              </div>
+            </body>
+            </html>
