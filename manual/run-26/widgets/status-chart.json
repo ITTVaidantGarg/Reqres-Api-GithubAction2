@@ -1,0 +1,1 @@
+[{"uid":"a33fd5783f618a59","name":"CreateUser_ShouldReturn201","time":{"start":1772118352434,"stop":1772118352691,"duration":257},"status":"passed","severity":"critical"},{"uid":"37e0d7b4ca8e03f8","name":"GetUser_ShouldReturn200_AndValidBody","time":{"start":1772118351569,"stop":1772118352412,"duration":843},"status":"passed","severity":"critical"}]
