@@ -11,8 +11,8 @@ on:
     paths:
       - 'ReqresApiAutomation/**'
 
-  schedule:
-    - cron: '0 0 * * *'   # Daily midnight UTC
+  # schedule:
+  #   - cron: '0 0 * * *'   # Daily midnight UTC
 
 permissions:
   contents: write
